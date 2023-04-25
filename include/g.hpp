@@ -2,14 +2,10 @@
 #include <cmath>
 #include <vector>
 #include "span.h"
+#include "fp.hpp"
 
 namespace bls12_381
 {
-
-class fp;
-class fp2;
-class fp6;
-class fp12;
 
 // g1 is type for point in G1.
 // g1 is both used for Affine and Jacobian point representation.
