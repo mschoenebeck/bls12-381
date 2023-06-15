@@ -241,11 +241,23 @@ void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int
 	mpn_tdiv_qr(c, d, 0, a, sa, b, sb);
 }
 #else
-void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int sb)
+void bn_divn_low(uint64_t *c, uint64_t *d, const uint64_t *ina, int sa, const uint64_t *inb, int sb)
 {
     int norm, i, n, t, sd;
     uint64_t carry, t1[3], t2[3];
-
+    assert(sa >= sb);
+    std::vector<uint64_t> va;
+    std::vector<uint64_t> vb;
+    // a might be expanded.
+    va.reserve(sa + 1);
+    // b[sa] might be acessed.
+    vb.reserve(sa + 1);
+    va.assign(ina, &ina[sa]);
+    vb.assign(inb, &inb[sb]);
+    va.resize(sa + 1, 0);
+    vb.resize(sa + 1, 0);
+    uint64_t *a = va.data();
+    uint64_t *b = vb.data();
     // Normalize x and y so that the leading digit of y is bigger than 2^(RLC_DIG-1).
     norm = (64 - __builtin_clzll(b[sb - 1])) % 64;
 
