@@ -210,7 +210,7 @@ void rsh(std::array<uint64_t, N>& out, const std::array<uint64_t, N>& in, uint64
 
 } // namespace scalar
 
-void bn_divn_low(uint64_t *c, uint64_t *d, const uint64_t *ina, int sa, const uint64_t *inb, int sb);
+void bn_divn_low(uint64_t *c, uint64_t *d, const uint64_t *a, int sa, const uint64_t *b, int sb);
 
 template<size_t N>
 fp fp::modPrime(std::array<uint64_t, N> k)

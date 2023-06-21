@@ -236,28 +236,16 @@ uint64_t bn_rshb_low(uint64_t *c, const uint64_t *a, int size, int bits)
 // This is how GMP could be used under the hood for modular reduction. However, benchmarks show zero difference
 // to the cpp implementation used in this library (borrowed from relic-toolkit). See #else case below.
 #include <gmp.h>
-void bn_divn_low(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int sb)
+void bn_divn_low(uint64_t *c, uint64_t *d, const uint64_t *a, int sa, const uint64_t *b, int sb)
 {
-	mpn_tdiv_qr(c, d, 0, a, sa, b, sb);
+    // A little bit risky but gmp should actually uses a and b as const
+    mpn_tdiv_qr(c, d, 0, const_cast<uint64_t *>(a), sa, const_cast<uint64_t *>(b), sb);
 }
 #else
-void bn_divn_low(uint64_t *c, uint64_t *d, const uint64_t *ina, int sa, const uint64_t *inb, int sb)
+static void bn_divn_low_impl(uint64_t *c, uint64_t *d, uint64_t *a, int sa, uint64_t *b, int sb)
 {
     int norm, i, n, t, sd;
     uint64_t carry, t1[3], t2[3];
-    assert(sa >= sb);
-    std::vector<uint64_t> va;
-    std::vector<uint64_t> vb;
-    // a might be expanded.
-    va.reserve(sa + 1);
-    // b[sa] might be acessed.
-    vb.reserve(sa + 1);
-    va.assign(ina, &ina[sa]);
-    vb.assign(inb, &inb[sb]);
-    va.resize(sa + 1, 0);
-    vb.resize(sa + 1, 0);
-    uint64_t *a = va.data();
-    uint64_t *b = vb.data();
     // Normalize x and y so that the leading digit of y is bigger than 2^(RLC_DIG-1).
     norm = (64 - __builtin_clzll(b[sb - 1])) % 64;
 
@@ -355,6 +343,26 @@ void bn_divn_low(uint64_t *c, uint64_t *d, const uint64_t *ina, int sa, const ui
     // Remainder should be not be longer than the divisor.
     bn_rshb_low(d, a, sb, norm);
 }
+
+void bn_divn_low(uint64_t *c, uint64_t *d, const uint64_t *a, int sa, const uint64_t *b, int sb)
+{
+    assert(sa >= sb);
+    std::vector<uint64_t> va;
+    std::vector<uint64_t> vb;
+
+    // a might be expanded.
+    va.reserve(sa + 1);
+    va.assign(a, &a[sa]);
+    va.resize(sa + 1, 0);
+
+    // b[sa] might be acessed.
+    vb.reserve(sa + 1);
+    vb.assign(b, &b[sb]);
+    vb.resize(sa + 1, 0);
+
+    bn_divn_low_impl(c,d,va.data(),sa,vb.data(),sb);
+}
+
 #endif
 
 } // namespace bls12_381
